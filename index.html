@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>पोलीस स्टेशन — अभ्यागत नोंदणी</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+/* ===================== GLOBAL ===================== */
+:root {
+  --navy:#0a1628; --blue:#1a3a6b; --blue-mid:#2a5298;
+  --gold:#c8960c; --gold-light:#f0b429;
+  --cream:#fdf6e3; --white:#fff;
+  --red:#c0392b; --green:#27ae60; --orange:#e67e22;
+  --bg:#f0f2f7; --text:#1a1a2e; --muted:#6b7280;
+  --border:#e2e8f0; --input-bg:#fffef9;
+  --sidebar-w:240px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter','Noto Sans Devanagari',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+.page{display:none;}
+.page.active{display:block;}
+
+/* ===================== VISITOR FORM ===================== */
+#page-form body,.form-wrap{background:var(--navy);}
+.form-wrap{min-height:100vh;}
+
+.fheader{
+  background:linear-gradient(135deg,var(--navy) 0%,var(--blue) 100%);
+  padding:20px 16px 24px;text-align:center;position:relative;overflow:hidden;
+}
+.fheader::before{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;border:2px solid rgba(200,150,12,.3);border-radius:50%;}
+.fheader::after{content:'';position:absolute;bottom:-40px;left:-20px;width:100px;height:100px;border:2px solid rgba(200,150,12,.2);border-radius:50%;}
+.femblem{width:60px;height:60px;background:var(--gold);border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 4px 15px rgba(200,150,12,.4);position:relative;z-index:1;}
+.fheader h1{font-family:'Noto Sans Devanagari',sans-serif;color:var(--gold-light);font-size:18px;font-weight:700;position:relative;z-index:1;}
+.fheader h2{color:rgba(255,255,255,.8);font-size:13px;font-weight:400;margin-top:4px;position:relative;z-index:1;}
+.station-tag{display:inline-block;background:rgba(200,150,12,.2);border:1px solid rgba(200,150,12,.4);color:var(--gold-light);font-size:12px;padding:4px 12px;border-radius:20px;margin-top:8px;position:relative;z-index:1;}
+.gold-strip{height:3px;background:linear-gradient(90deg,var(--gold),var(--gold-light),var(--gold));}
+
+.form-body{background:var(--cream);padding:20px 16px 40px;min-height:calc(100vh - 160px);}
+.sec-title{font-size:12px;font-weight:600;color:var(--blue);text-transform:uppercase;letter-spacing:1px;margin:20px 0 12px;padding-left:10px;border-left:3px solid var(--gold);}
+.field{margin-bottom:14px;}
+label.fl{display:block;font-size:13px;font-weight:600;color:var(--blue);margin-bottom:6px;font-family:'Noto Sans Devanagari',sans-serif;}
+label.fl .req{color:var(--red);margin-left:2px;}
+input[type=text],input[type=tel],select,textarea{
+  width:100%;padding:12px 14px;border:1.5px solid #d1c4a0;border-radius:8px;
+  background:var(--input-bg);font-family:'Noto Sans Devanagari',sans-serif;
+  font-size:14px;color:var(--text);outline:none;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,58,107,.1);}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%231a3a6b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;cursor:pointer;}
+textarea{resize:none;min-height:80px;}
+
+.radio-group{display:flex;gap:8px;flex-wrap:wrap;}
+.radio-opt input{display:none;}
+.radio-opt{flex:1;min-width:90px;}
+.radio-opt label{display:block;text-align:center;padding:10px 8px;border:1.5px solid #d1c4a0;border-radius:8px;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;background:var(--input-bg);transition:all .2s;font-family:'Noto Sans Devanagari',sans-serif;}
+.radio-opt input:checked+label{border-color:var(--blue);background:var(--blue);color:#fff;}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px;}
+.chip input{display:none;}
+.chip label{display:inline-block;padding:8px 14px;border:1.5px solid #d1c4a0;border-radius:20px;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;background:var(--input-bg);transition:all .2s;font-family:'Noto Sans Devanagari',sans-serif;}
+.chip input:checked+label{border-color:var(--blue);background:var(--blue);color:#fff;}
+
+.photo-box{border:2px dashed #d1c4a0;border-radius:10px;padding:16px;text-align:center;background:var(--input-bg);cursor:pointer;transition:all .2s;}
+.photo-box:active{background:#f5f0e0;border-color:var(--blue);}
+.photo-box .picon{font-size:32px;margin-bottom:6px;}
+.photo-box p{font-size:13px;color:var(--muted);font-family:'Noto Sans Devanagari',sans-serif;}
+.photo-box p strong{color:var(--blue);}
+#photo-preview{width:100%;max-height:200px;object-fit:cover;border-radius:8px;display:none;margin-top:10px;}
+#photo-input{display:none;}
+
+.time-display{background:rgba(26,58,107,.06);border:1px solid rgba(26,58,107,.15);border-radius:8px;padding:10px 14px;font-size:14px;color:var(--blue);font-weight:600;}
+
+.submit-btn{width:100%;padding:16px;background:linear-gradient(135deg,var(--blue),var(--navy));color:#fff;border:none;border-radius:10px;font-family:'Noto Sans Devanagari',sans-serif;font-size:16px;font-weight:700;cursor:pointer;margin-top:24px;transition:transform .1s;letter-spacing:.5px;}
+.submit-btn:active{transform:scale(.98);}
+
+.divider{height:1px;background:#d1c4a0;margin:4px 0 16px;}
+
+/* Success screen */
+.success-screen{display:none;text-align:center;padding:40px 20px;background:var(--cream);min-height:calc(100vh - 160px);}
+.success-icon{width:80px;height:80px;background:var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 20px;box-shadow:0 8px 25px rgba(39,174,96,.3);animation:pop .4s ease-out;}
+@keyframes pop{0%{transform:scale(0);opacity:0;}70%{transform:scale(1.1);}100%{transform:scale(1);opacity:1;}}
+.success-screen h2{font-family:'Noto Sans Devanagari',sans-serif;font-size:22px;color:var(--navy);margin-bottom:10px;}
+.success-screen p{color:var(--muted);font-size:14px;line-height:1.6;font-family:'Noto Sans Devanagari',sans-serif;}
+.token-box{background:var(--navy);border-radius:12px;padding:16px 24px;margin:24px 0;display:inline-block;}
+.token-box .tlbl{color:rgba(255,255,255,.6);font-size:11px;letter-spacing:1px;text-transform:uppercase;}
+.token-box .tnum{color:var(--gold-light);font-size:32px;font-weight:700;letter-spacing:4px;}
+.token-box .ttime{color:rgba(255,255,255,.5);font-size:11px;margin-top:4px;}
+.info-row{display:flex;background:#fff;border-radius:8px;padding:12px 16px;margin:8px 0;text-align:left;border:1px solid #d1c4a0;}
+.info-row .il{color:var(--muted);font-size:12px;width:100px;flex-shrink:0;font-family:'Noto Sans Devanagari',sans-serif;}
+.info-row .iv{color:var(--text);font-size:13px;font-weight:600;font-family:'Noto Sans Devanagari',sans-serif;}
+.note-box{background:rgba(200,150,12,.1);border:1px solid rgba(200,150,12,.3);border-radius:8px;padding:12px;font-size:12px;color:#7a5c00;margin-top:16px;text-align:left;font-family:'Noto Sans Devanagari',sans-serif;}
+
+/* ===================== ADMIN DASHBOARD ===================== */
+#page-admin{display:flex;min-height:100vh;}
+.sidebar{position:fixed;top:0;left:0;width:var(--sidebar-w);height:100vh;background:var(--navy);display:flex;flex-direction:column;z-index:100;}
+.sb-header{padding:20px 16px;border-bottom:1px solid rgba(255,255,255,.1);text-align:center;}
+.sb-logo{width:50px;height:50px;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 10px;}
+.sb-header h2{color:var(--gold-light);font-size:13px;font-weight:700;font-family:'Noto Sans Devanagari',sans-serif;line-height:1.3;}
+.sb-header p{color:rgba(255,255,255,.5);font-size:10px;margin-top:4px;}
+.nav-item{padding:13px 20px;display:flex;align-items:center;gap:10px;color:rgba(255,255,255,.65);font-size:13px;cursor:pointer;transition:all .2s;border-left:3px solid transparent;font-family:'Noto Sans Devanagari',sans-serif;}
+.nav-item:hover{background:rgba(255,255,255,.06);color:#fff;}
+.nav-item.active{background:rgba(200,150,12,.15);color:var(--gold-light);border-left-color:var(--gold);}
+.sb-footer{margin-top:auto;padding:16px;border-top:1px solid rgba(255,255,255,.1);text-align:center;}
+.clock{color:rgba(255,255,255,.4);font-size:11px;}
+.clock .ctime{font-size:18px;color:var(--gold-light);font-weight:600;margin-bottom:2px;}
+.clock .cdate{color:rgba(255,255,255,.5);font-size:10px;}
+
+.main-area{margin-left:var(--sidebar-w);flex:1;}
+.topbar{background:#fff;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,.05);position:sticky;top:0;z-index:50;}
+.topbar h1{font-family:'Noto Sans Devanagari',sans-serif;font-size:18px;font-weight:700;color:var(--navy);}
+.topbar-actions{display:flex;gap:10px;align-items:center;}
+
+.btn{padding:8px 16px;border-radius:7px;border:none;font-family:'Noto Sans Devanagari',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .2s;}
+.btn-primary{background:var(--blue);color:#fff;}
+.btn-primary:hover{background:var(--navy);}
+.btn-success{background:var(--green);color:#fff;}
+.btn-success:hover{background:#219a52;}
+.btn-gold{background:var(--gold);color:#fff;}
+.btn-danger{background:var(--red);color:#fff;}
+.btn-outline{background:#fff;color:var(--blue);border:1.5px solid var(--blue);}
+.btn-sm{padding:5px 10px;font-size:11px;}
+
+.content{padding:24px;}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+.stat-card{background:#fff;border-radius:12px;padding:18px 20px;border:1px solid var(--border);position:relative;overflow:hidden;}
+.stat-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.stat-card.blue::after{background:var(--blue-mid);}
+.stat-card.green::after{background:var(--green);}
+.stat-card.orange::after{background:var(--orange);}
+.stat-card.gold::after{background:var(--gold);}
+.stat-card .sicon{font-size:28px;margin-bottom:8px;}
+.stat-card .snum{font-size:28px;font-weight:700;color:var(--navy);line-height:1;}
+.stat-card .slbl{font-family:'Noto Sans Devanagari',sans-serif;font-size:12px;color:var(--muted);margin-top:4px;}
+
+.table-card{background:#fff;border-radius:12px;border:1px solid var(--border);overflow:hidden;}
+.table-toolbar{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:12px;}
+.table-toolbar h3{font-family:'Noto Sans Devanagari',sans-serif;font-size:16px;font-weight:700;color:var(--navy);}
+.search-box{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px;min-width:220px;}
+.search-box input{border:none;background:transparent;outline:none;font-family:'Noto Sans Devanagari',sans-serif;font-size:13px;color:var(--text);width:100%;}
+.filter-tabs{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.ftab{padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'Noto Sans Devanagari',sans-serif;color:var(--muted);transition:all .2s;}
+.ftab.active{background:var(--blue);color:#fff;border-color:var(--blue);}
+.toolbar-right{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+input[type=date]{padding:7px 12px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;outline:none;font-family:inherit;}
+input[type=date]:focus{border-color:var(--blue);}
+
+table{width:100%;border-collapse:collapse;}
+thead th{background:#f8fafc;padding:11px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);font-family:'Noto Sans Devanagari',sans-serif;}
+tbody tr{border-bottom:1px solid #f1f5f9;transition:background .1s;}
+tbody tr:hover{background:#f8fafc;}
+tbody td{padding:12px 14px;font-size:13px;vertical-align:middle;}
+.vname{font-weight:600;color:var(--navy);}
+.vmob{color:var(--muted);font-size:12px;}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;font-family:'Noto Sans Devanagari',sans-serif;}
+.badge-in{background:#dcfce7;color:#166534;}
+.badge-out{background:#fef3c7;color:#92400e;}
+.token-cell{font-size:11px;font-family:monospace;font-weight:700;color:var(--blue-mid);}
+.photo-thumb{width:34px;height:34px;border-radius:50%;object-fit:cover;border:2px solid var(--border);}
+.photo-ph{width:34px;height:34px;border-radius:50%;background:#e2e8f0;display:inline-flex;align-items:center;justify-content:center;font-size:16px;}
+.action-btns{display:flex;gap:6px;}
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted);}
+.empty-state .eicon{font-size:48px;margin-bottom:12px;}
+.empty-state p{font-family:'Noto Sans Devanagari',sans-serif;font-size:14px;}
+
+/* Modals */
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:200;align-items:center;justify-content:center;}
+.modal-overlay.active{display:flex;}
+.modal{background:#fff;border-radius:16px;padding:28px;max-width:520px;width:90%;max-height:80vh;overflow-y:auto;animation:mIn .2s ease-out;}
+@keyframes mIn{from{transform:scale(.95);opacity:0;}to{transform:scale(1);opacity:1;}}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
+.modal-header h3{font-family:'Noto Sans Devanagari',sans-serif;font-size:18px;font-weight:700;color:var(--navy);}
+.modal-close{background:#f1f5f9;border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;}
+.detail-row{display:flex;padding:10px 0;border-bottom:1px solid #f1f5f9;font-family:'Noto Sans Devanagari',sans-serif;}
+.detail-row .dl{width:130px;flex-shrink:0;color:var(--muted);font-size:13px;}
+.detail-row .dv{font-size:13px;font-weight:600;color:var(--text);}
+.detail-photo{width:100px;height:100px;border-radius:10px;object-fit:cover;border:2px solid var(--border);margin-bottom:16px;}
+
+/* QR section in modal */
+.qr-section{text-align:center;}
+.qr-section h3{font-family:'Noto Sans Devanagari',sans-serif;font-size:20px;color:var(--navy);margin-bottom:6px;}
+.qr-section p{font-family:'Noto Sans Devanagari',sans-serif;font-size:13px;color:var(--muted);margin-bottom:20px;}
+#qr-canvas-wrap{display:inline-block;padding:16px;background:#fff;border:2px solid var(--border);border-radius:12px;margin-bottom:16px;}
+.qr-instructions{background:rgba(26,58,107,.05);border:1px solid rgba(26,58,107,.15);border-radius:8px;padding:14px;text-align:left;font-family:'Noto Sans Devanagari',sans-serif;font-size:12px;color:var(--blue);line-height:1.8;}
+.qr-note{background:rgba(200,150,12,.1);border:1px solid rgba(200,150,12,.3);border-radius:8px;padding:10px;font-size:12px;color:#7a5c00;font-family:'Noto Sans Devanagari',sans-serif;margin-bottom:16px;}
+
+@media(max-width:900px){
+  .sidebar{display:none;}
+  .main-area{margin-left:0;}
+  .stats-grid{grid-template-columns:repeat(2,1fr);}
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== PAGE: VISITOR FORM ==================== -->
+<div id="page-form" class="page">
+  <div class="form-wrap">
+    <div class="fheader">
+      <div class="femblem">🏛️</div>
+      <h1>महाराष्ट्र पोलीस</h1>
+      <h2>अभ्यागत नोंदणी प्रणाली</h2>
+      <div class="station-tag">Wadala TT Police Station</div>
+    </div>
+    <div class="gold-strip"></div>
+
+    <!-- Form -->
+    <div class="form-body" id="form-section">
+      <div class="sec-title">वैयक्तिक माहिती</div>
+      <div class="field">
+        <label class="fl">पूर्ण नाव <span class="req">*</span></label>
+        <input type="text" id="f-name" placeholder="उदा. राजेश प्रकाश शिंदे">
+      </div>
+      <div class="field">
+        <label class="fl">मोबाईल नंबर <span class="req">*</span></label>
+        <input type="tel" id="f-mobile" placeholder="10 अंकी मोबाईल नंबर" maxlength="10">
+      </div>
+      <div class="field">
+        <label class="fl">पत्ता <span class="req">*</span></label>
+        <textarea id="f-address" placeholder="राहण्याचा पूर्ण पत्ता लिहा..."></textarea>
+      </div>
+
+      <div class="divider"></div>
+      <div class="sec-title">ओळखपत्र (ID Proof)</div>
+      <div class="field">
+        <label class="fl">ID प्रकार <span class="req">*</span></label>
+        <div class="radio-group">
+          <div class="radio-opt"><input type="radio" name="id-type" id="id-a" value="आधार कार्ड" checked><label for="id-a">आधार</label></div>
+          <div class="radio-opt"><input type="radio" name="id-type" id="id-p" value="पॅन कार्ड"><label for="id-p">पॅन</label></div>
+          <div class="radio-opt"><input type="radio" name="id-type" id="id-d" value="Driving Licence"><label for="id-d">DL</label></div>
+          <div class="radio-opt"><input type="radio" name="id-type" id="id-v" value="मतदान कार्ड"><label for="id-v">Voter</label></div>
+        </div>
+      </div>
+      <div class="field">
+        <label class="fl">ID क्रमांक <span class="req">*</span></label>
+        <input type="text" id="f-idnum" placeholder="ओळखपत्र क्रमांक टाका" style="text-transform:uppercase">
+      </div>
+
+      <div class="divider"></div>
+      <div class="sec-title">भेटीची माहिती</div>
+      <div class="field">
+        <label class="fl">भेटण्याचे कारण <span class="req">*</span></label>
+        <div class="chips">
+          <div class="chip"><input type="radio" name="reason" id="r1" value="तक्रार नोंदवणे"><label for="r1">📝 तक्रार</label></div>
+          <div class="chip"><input type="radio" name="reason" id="r2" value="FIR स्थिती"><label for="r2">📋 FIR स्थिती</label></div>
+          <div class="chip"><input type="radio" name="reason" id="r3" value="चारित्र्य प्रमाणपत्र"><label for="r3">📄 चारित्र्य प्रमाणपत्र</label></div>
+          <div class="chip"><input type="radio" name="reason" id="r4" value="NOC / परवाना"><label for="r4">🔖 NOC</label></div>
+          <div class="chip"><input type="radio" name="reason" id="r5" value="समन्स / नोटीस"><label for="r5">⚖️ समन्स</label></div>
+          <div class="chip"><input type="radio" name="reason" id="r6" value="माहिती घेणे"><label for="r6">ℹ️ माहिती</label></div>
+          <div class="chip"><input type="radio" name="reason" id="r7" value="इतर"><label for="r7">अन्य</label></div>
+        </div>
+      </div>
+      <div class="field" id="other-field" style="display:none">
+        <label class="fl">कारण सांगा</label>
+        <input type="text" id="f-other" placeholder="भेटण्याचे कारण लिहा...">
+      </div>
+      <div class="field">
+        <label class="fl">कोणत्या अधिकाऱ्यास भेटायचे? <span class="req">*</span></label>
+        <select id="f-officer">
+          <option value="">-- अधिकारी निवडा --</option>
+          <option>PI / सीनियर PI</option>
+          <option>API (Cyber Cell)</option>
+          <option>PSI (ड्युटी अधिकारी)</option>
+          <option>ASI</option>
+          <option>हवालदार / कर्मचारी</option>
+          <option>माहित नाही</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="fl">प्रवेश वेळ</label>
+        <div class="time-display" id="f-entry-time">--:-- --</div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="sec-title">फोटो / छायाचित्र</div>
+      <div class="photo-box" onclick="document.getElementById('photo-input').click()">
+        <div class="picon">📷</div>
+        <p><strong>फोटो काढा किंवा निवडा</strong></p>
+        <p>आपला स्पष्ट फोटो द्यावा</p>
+        <img id="photo-preview" alt="preview">
+      </div>
+      <input type="file" id="photo-input" accept="image/*" capture="user">
+
+      <button class="submit-btn" onclick="submitForm()">✅ नोंदणी पूर्ण करा</button>
+    </div>
+
+    <!-- Success -->
+    <div class="success-screen" id="success-section">
+      <div class="success-icon">✓</div>
+      <h2>नोंदणी यशस्वी!</h2>
+      <p>आपली नोंद झाली आहे. कृपया बसण्याच्या खोलीत प्रतीक्षा करावी.</p>
+      <div class="token-box">
+        <div class="tlbl">Token Number</div>
+        <div class="tnum" id="s-token">---</div>
+        <div class="ttime" id="s-time"></div>
+      </div>
+      <div id="s-rows"></div>
+      <div class="note-box">⚠️ <strong>सूचना:</strong> Token क्रमांक लक्षात ठेवा. काउंटरवर बोलावले जाईल. कृपया मोबाईल Silent मोडवर ठेवा.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE: ADMIN ==================== -->
+<div id="page-admin" class="page">
+  <div class="sidebar">
+    <div class="sb-header">
+      <div class="sb-logo">🏛️</div>
+      <h2>Wadala TT Police Station</h2>
+      <p>Visitor Management System</p>
+    </div>
+    <div class="gold-strip"></div>
+    <div style="padding:12px 0;">
+      <div class="nav-item active" onclick="setNav(this,'all')"><span>📊</span> डॅशबोर्ड</div>
+      <div class="nav-item" onclick="setNav(this,'inside')"><span>🚪</span> आत असलेले</div>
+      <div class="nav-item" onclick="showQR()"><span>📱</span> QR Code दाखवा</div>
+      <div class="nav-item" onclick="exportExcel()"><span>📥</span> Excel Export</div>
+    </div>
+    <div class="sb-footer">
+      <div class="clock">
+        <div class="ctime" id="sb-clock">--:--</div>
+        <div class="cdate" id="sb-date"></div>
+      </div>
+    </div>
+  </div>
+  <div class="main-area">
+    <div class="topbar">
+      <h1 id="page-title">📊 आजचा डॅशबोर्ड</h1>
+      <div class="topbar-actions">
+        <button class="btn btn-gold" onclick="loadDemo()">🔄 Demo</button>
+        <button class="btn btn-success" onclick="exportExcel()">📥 Excel</button>
+        <button class="btn btn-primary" onclick="showQR()">📱 QR Code</button>
+      </div>
+    </div>
+    <div class="content">
+      <div class="stats-grid">
+        <div class="stat-card blue"><div class="sicon">👥</div><div class="snum" id="st-total">0</div><div class="slbl">आजचे एकूण</div></div>
+        <div class="stat-card green"><div class="sicon">🚪</div><div class="snum" id="st-inside">0</div><div class="slbl">आत असलेले</div></div>
+        <div class="stat-card orange"><div class="sicon">✅</div><div class="snum" id="st-left">0</div><div class="slbl">निघून गेलेले</div></div>
+        <div class="stat-card gold"><div class="sicon">⏰</div><div class="snum" id="st-peak">--</div><div class="slbl">सर्वाधिक गर्दी</div></div>
+      </div>
+      <div class="table-card">
+        <div class="table-toolbar">
+          <div>
+            <h3>अभ्यागत नोंदणी</h3>
+            <div class="filter-tabs">
+              <div class="ftab active" onclick="filterTab('all',this)">सर्व</div>
+              <div class="ftab" onclick="filterTab('inside',this)">आत आहेत</div>
+              <div class="ftab" onclick="filterTab('left',this)">निघाले</div>
+            </div>
+          </div>
+          <div class="toolbar-right">
+            <input type="date" id="dt-filter" onchange="renderTable()">
+            <div class="search-box">🔍<input type="text" id="srch" placeholder="नाव / मोबाईल / Token..." oninput="renderTable()"></div>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr>
+              <th>फोटो</th><th>Token</th><th>नाव / मोबाईल</th>
+              <th>कारण</th><th>अधिकारी</th><th>वेळ</th><th>स्थिती</th><th>कृती</th>
+            </tr></thead>
+            <tbody id="vtbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal">
+    <div class="modal-header"><h3>अभ्यागत माहिती</h3><button class="modal-close" onclick="closeM('detail-modal')">✕</button></div>
+    <div id="detail-content"></div>
+  </div>
+</div>
+
+<!-- QR Modal -->
+<div class="modal-overlay" id="qr-modal">
+  <div class="modal">
+    <div class="modal-header"><h3>📱 QR Code — नोंदणी फॉर्म</h3><button class="modal-close" onclick="closeM('qr-modal')">✕</button></div>
+    <div class="qr-section">
+      <h3>अभ्यागत नोंदणी</h3>
+      <p>हा QR Code स्वागत कक्षात लावा. अभ्यागत स्कॅन करतील.</p>
+      <div class="qr-note">⚠️ <strong>महत्त्वाचे:</strong> हे काम करण्यासाठी दोन्ही PC आणि visitor चा मोबाईल <strong>एकाच WiFi</strong> नेटवर्कवर असणे आवश्यक आहे. <strong>किंवा</strong> हे file एखाद्या web server वर host केल्यास कोठूनही काम करेल.</div>
+      <div id="qr-canvas-wrap"></div>
+      <div class="qr-instructions">
+        📌 <strong>वापरण्याची पद्धत:</strong><br>
+        १. हा QR Code प्रिंट करून counter वर लावा<br>
+        २. अभ्यागत स्वतःच्या मोबाईलने स्कॅन करतील<br>
+        ३. form भरून submit करतील<br>
+        ४. इथे आपोआप नोंद होईल (15 sec auto-refresh)<br>
+        ५. Token नंबर मिळेल — त्यावरून बोलावा
+      </div>
+      <div style="margin-top:16px;display:flex;gap:10px;justify-content:center;">
+        <button class="btn btn-primary" onclick="window.print()">🖨️ Print</button>
+        <button class="btn btn-outline" onclick="dlQR()">📥 Download</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Exit Modal -->
+<div class="modal-overlay" id="exit-modal">
+  <div class="modal" style="max-width:340px;text-align:center;">
+    <div style="font-size:48px;margin-bottom:16px;">🚪</div>
+    <h3 style="font-family:'Noto Sans Devanagari',sans-serif;margin-bottom:8px;font-size:18px;" id="exit-name-lbl"></h3>
+    <p style="font-family:'Noto Sans Devanagari',sans-serif;color:var(--muted);font-size:13px;margin-bottom:24px;">हे अभ्यागत बाहेर गेले असे नोंदवायचे का?</p>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button class="btn btn-outline" onclick="closeM('exit-modal')">रद्द करा</button>
+      <button class="btn btn-success" id="exit-ok-btn">✅ Exit नोंदवा</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== ROUTING ====================
+function router() {
+  const hash = location.hash;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  if (hash === '#form') {
+    document.getElementById('page-form').classList.add('active');
+    initForm();
+  } else {
+    document.getElementById('page-admin').classList.add('active');
+    initAdmin();
+  }
+}
+window.addEventListener('hashchange', router);
+window.addEventListener('load', router);
+
+// ==================== SHARED DATA ====================
+function getVisitors() {
+  try { return JSON.parse(localStorage.getItem('vs_visitors') || '[]'); } catch(e) { return []; }
+}
+function saveVisitors(arr) {
+  localStorage.setItem('vs_visitors', JSON.stringify(arr));
+}
+function genToken() {
+  const now = new Date();
+  const d = String(now.getDate()).padStart(2,'0');
+  const m = String(now.getMonth()+1).padStart(2,'0');
+  const today = `${now.getFullYear()}${m}${now.getDate()}`;
+  const storedDay = localStorage.getItem('vs_today');
+  let seq = storedDay === today ? (parseInt(localStorage.getItem('vs_seq')||'0')+1) : 1;
+  localStorage.setItem('vs_today', today);
+  localStorage.setItem('vs_seq', seq);
+  return `WTT${d}${m}${String(seq).padStart(3,'0')}`;
+}
+
+// ==================== VISITOR FORM ====================
+function initForm() {
+  updateFTime();
+  setInterval(updateFTime, 10000);
+}
+function updateFTime() {
+  const now = new Date();
+  const h = now.getHours(), m = String(now.getMinutes()).padStart(2,'0');
+  const ampm = h>=12?'PM':'AM', h12 = String(h%12||12).padStart(2,'0');
+  const el = document.getElementById('f-entry-time');
+  if(el) el.textContent = `${h12}:${m} ${ampm}`;
+}
+document.getElementById('photo-input').addEventListener('change', function(e) {
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const prev = document.getElementById('photo-preview');
+    prev.src = ev.target.result; prev.style.display = 'block';
+    document.querySelector('.photo-box .picon').textContent = '✅';
+    document.querySelectorAll('.photo-box p')[0].innerHTML = '<strong>फोटो जोडला</strong>';
+    document.querySelectorAll('.photo-box p')[1].textContent = 'पुन्हा बदलण्यासाठी tap करा';
+  };
+  reader.readAsDataURL(file);
+});
+document.querySelectorAll('input[name="reason"]').forEach(r => {
+  r.addEventListener('change', function() {
+    document.getElementById('other-field').style.display = this.value==='इतर'?'block':'none';
+  });
+});
+
+function submitForm() {
+  const name = document.getElementById('f-name').value.trim();
+  const mobile = document.getElementById('f-mobile').value.trim();
+  const address = document.getElementById('f-address').value.trim();
+  const idNum = document.getElementById('f-idnum').value.trim();
+  const officer = document.getElementById('f-officer').value;
+  const reasonEl = document.querySelector('input[name="reason"]:checked');
+
+  if(!name){alert('कृपया नाव भरा');return;}
+  if(!/^\d{10}$/.test(mobile)){alert('कृपया 10 अंकी मोबाईल नंबर भरा');return;}
+  if(!address){alert('कृपया पत्ता भरा');return;}
+  if(!idNum){alert('कृपया ID क्रमांक भरा');return;}
+  if(!reasonEl){alert('कृपया भेटण्याचे कारण निवडा');return;}
+  if(!officer){alert('कृपया अधिकारी निवडा');return;}
+
+  const idType = document.querySelector('input[name="id-type"]:checked').value;
+  let reason = reasonEl.value;
+  if(reason==='इतर') reason = document.getElementById('f-other').value||'इतर';
+
+  const now = new Date();
+  const token = genToken();
+  const photo = document.getElementById('photo-preview').src||'';
+
+  const entry = {token,name,mobile,address,idType,idNumber:idNum,reason,officer,photo,
+    entryTime:now.toISOString(),exitTime:null};
+  const arr = getVisitors(); arr.push(entry); saveVisitors(arr);
+
+  document.getElementById('s-token').textContent = token;
+  document.getElementById('s-time').textContent = `प्रवेश: ${now.toLocaleTimeString('mr-IN',{hour:'2-digit',minute:'2-digit'})}`;
+  document.getElementById('s-rows').innerHTML = [
+    {l:'नाव',v:name},{l:'मोबाईल',v:mobile},{l:'कारण',v:reason},{l:'अधिकारी',v:officer}
+  ].map(x=>`<div class="info-row"><span class="il">${x.l}</span><span class="iv">${x.v}</span></div>`).join('');
+
+  document.getElementById('form-section').style.display='none';
+  document.getElementById('success-section').style.display='block';
+  window.scrollTo(0,0);
+}
+
+// ==================== ADMIN ====================
+let curFilter = 'all';
+
+function initAdmin() {
+  setToday();
+  updateClock();
+  setInterval(updateClock, 1000);
+  updateStats();
+  renderTable();
+  setInterval(()=>{updateStats();renderTable();}, 15000);
+}
+
+function setToday() {
+  const el = document.getElementById('dt-filter');
+  if(el && !el.value) el.value = new Date().toISOString().split('T')[0];
+}
+
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  const s = String(now.getSeconds()).padStart(2,'0');
+  const cl = document.getElementById('sb-clock');
+  const cd = document.getElementById('sb-date');
+  if(cl) cl.textContent = `${h}:${m}:${s}`;
+  if(cd) cd.textContent = now.toLocaleDateString('mr-IN',{weekday:'short',day:'numeric',month:'short'});
+}
+
+function updateStats() {
+  const todayStr = new Date().toLocaleDateString('mr-IN');
+  const all = getVisitors();
+  const today = all.filter(v => new Date(v.entryTime).toLocaleDateString('mr-IN')===todayStr);
+  const inside = today.filter(v=>!v.exitTime);
+  const left = today.filter(v=>v.exitTime);
+  const st = document.getElementById('st-total');
+  const si = document.getElementById('st-inside');
+  const sl = document.getElementById('st-left');
+  const sp = document.getElementById('st-peak');
+  if(st) st.textContent = today.length;
+  if(si) si.textContent = inside.length;
+  if(sl) sl.textContent = left.length;
+  if(sp && today.length>0) {
+    const hc={};
+    today.forEach(v=>{const h=new Date(v.entryTime).getHours();hc[h]=(hc[h]||0)+1;});
+    const ph=Object.keys(hc).reduce((a,b)=>hc[a]>hc[b]?a:b);
+    const h=parseInt(ph),ampm=h>=12?'PM':'AM',h12=String(h%12||12).padStart(2,'0');
+    sp.textContent=`${h12}:00 ${ampm}`;
+  }
+}
+
+function renderTable() {
+  const srch = (document.getElementById('srch')||{value:''}).value.toLowerCase();
+  const dt = (document.getElementById('dt-filter')||{value:''}).value;
+  let data = getVisitors().filter(v=>{
+    if(dt && new Date(v.entryTime).toISOString().split('T')[0]!==dt) return false;
+    if(curFilter==='inside' && v.exitTime) return false;
+    if(curFilter==='left' && !v.exitTime) return false;
+    if(srch && !`${v.name} ${v.mobile} ${v.token}`.toLowerCase().includes(srch)) return false;
+    return true;
+  }).sort((a,b)=>new Date(b.entryTime)-new Date(a.entryTime));
+
+  const tbody = document.getElementById('vtbody');
+  if(!tbody) return;
+  if(!data.length) {
+    tbody.innerHTML=`<tr><td colspan="8"><div class="empty-state"><div class="eicon">📋</div><p>कोणतीही नोंद सापडली नाही</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = data.map(v=>{
+    const et = new Date(v.entryTime).toLocaleTimeString('mr-IN',{hour:'2-digit',minute:'2-digit'});
+    const xt = v.exitTime ? new Date(v.exitTime).toLocaleTimeString('mr-IN',{hour:'2-digit',minute:'2-digit'}) : null;
+    const ph = v.photo ? `<img src="${v.photo}" class="photo-thumb">` : `<div class="photo-ph">👤</div>`;
+    return `<tr>
+      <td>${ph}</td>
+      <td><span class="token-cell">${v.token}</span></td>
+      <td><div class="vname">${v.name}</div><div class="vmob">📞 ${v.mobile}</div></td>
+      <td style="font-size:12px;font-family:'Noto Sans Devanagari',sans-serif;">${v.reason}</td>
+      <td style="font-size:12px;font-family:'Noto Sans Devanagari',sans-serif;">${v.officer}</td>
+      <td style="font-size:12px;">🟢 ${et}${xt?`<br>🔴 ${xt}`:''}</td>
+      <td><span class="badge ${v.exitTime?'badge-out':'badge-in'}">${v.exitTime?'🔴 निघाले':'🟢 आत आहे'}</span></td>
+      <td><div class="action-btns">
+        <button class="btn btn-outline btn-sm" onclick="showDetail('${v.token}')">👁</button>
+        ${!v.exitTime?`<button class="btn btn-success btn-sm" onclick="confirmExit('${v.token}','${v.name}')">Exit</button>`:''}
+        <button class="btn btn-danger btn-sm" onclick="delEntry('${v.token}')">🗑</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function filterTab(status, el) {
+  curFilter = status;
+  document.querySelectorAll('.ftab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderTable();
+}
+function setNav(el, filter) {
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el.classList.add('active');
+  curFilter = filter;
+  document.querySelectorAll('.ftab').forEach((t,i)=>{
+    t.classList.toggle('active', (filter==='all'&&i===0)||(filter==='inside'&&i===1));
+  });
+  document.getElementById('page-title').textContent = filter==='inside'?'🚪 आत असलेले':'📊 आजचा डॅशबोर्ड';
+  renderTable();
+}
+
+function showDetail(token) {
+  const v = getVisitors().find(x=>x.token===token); if(!v) return;
+  const et = new Date(v.entryTime).toLocaleString('mr-IN');
+  const xt = v.exitTime ? new Date(v.exitTime).toLocaleString('mr-IN') : 'अजून आत आहे';
+  document.getElementById('detail-content').innerHTML =
+    (v.photo?`<img src="${v.photo}" class="detail-photo">`:'') +
+    [{l:'Token',v:v.token},{l:'नाव',v:v.name},{l:'मोबाईल',v:v.mobile},
+     {l:'पत्ता',v:v.address},{l:'ID प्रकार',v:v.idType},{l:'ID क्रमांक',v:v.idNumber},
+     {l:'कारण',v:v.reason},{l:'अधिकारी',v:v.officer},{l:'प्रवेश',v:et},{l:'निर्गमन',v:xt}]
+    .map(x=>`<div class="detail-row"><span class="dl">${x.l}</span><span class="dv">${x.v}</span></div>`).join('');
+  document.getElementById('detail-modal').classList.add('active');
+}
+
+function confirmExit(token, name) {
+  document.getElementById('exit-name-lbl').textContent = name;
+  document.getElementById('exit-ok-btn').onclick = ()=>doExit(token);
+  document.getElementById('exit-modal').classList.add('active');
+}
+function doExit(token) {
+  const arr = getVisitors();
+  const idx = arr.findIndex(v=>v.token===token);
+  if(idx!==-1){arr[idx].exitTime=new Date().toISOString();saveVisitors(arr);}
+  closeM('exit-modal'); updateStats(); renderTable();
+}
+function delEntry(token) {
+  if(!confirm('ही नोंद कायमची हटवायची का?')) return;
+  saveVisitors(getVisitors().filter(v=>v.token!==token));
+  updateStats(); renderTable();
+}
+function closeM(id){document.getElementById(id).classList.remove('active');}
+
+// QR Code — generates link to #form on same file
+function showQR() {
+  document.getElementById('qr-modal').classList.add('active');
+  const wrap = document.getElementById('qr-canvas-wrap');
+  wrap.innerHTML = '';
+
+  // Build the URL pointing to #form on THIS file
+  const url = location.href.split('#')[0] + '#form';
+
+  // Draw QR manually using canvas (no external lib needed)
+  // We'll use a simple approach: create a data URL via a lightweight QR encoder
+  // Using qrcodejs from CDN
+  const script = document.createElement('script');
+  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+  script.onload = () => {
+    wrap.innerHTML = '';
+    new QRCode(wrap, {
+      text: url, width: 200, height: 200,
+      colorDark: '#0a1628', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  };
+  script.onerror = () => {
+    // Fallback: show URL as text + use Google Charts API QR
+    wrap.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}&color=0a1628" style="border-radius:8px;" onerror="this.parentElement.innerHTML='<p style=\\'font-size:11px;padding:20px;\\'>URL: ${url}</p>'">`;
+  };
+  document.head.appendChild(script);
+}
+
+function dlQR() {
+  const canvas = document.querySelector('#qr-canvas-wrap canvas');
+  if(canvas){const a=document.createElement('a');a.download='visitor_qr.png';a.href=canvas.toDataURL();a.click();}
+  else{const img=document.querySelector('#qr-canvas-wrap img');if(img){const a=document.createElement('a');a.download='visitor_qr.png';a.href=img.src;a.click();}}
+}
+
+function exportExcel() {
+  const arr = getVisitors();
+  if(!arr.length){alert('Export करण्यासाठी कोणतीही नोंद नाही');return;}
+  const data = arr.map(v=>({
+    'Token':v.token,'नाव':v.name,'मोबाईल':v.mobile,'पत्ता':v.address,
+    'ID प्रकार':v.idType,'ID क्रमांक':v.idNumber,'भेटण्याचे कारण':v.reason,
+    'अधिकारी':v.officer,
+    'प्रवेश वेळ':new Date(v.entryTime).toLocaleString('mr-IN'),
+    'निर्गमन वेळ':v.exitTime?new Date(v.exitTime).toLocaleString('mr-IN'):'आत आहे',
+    'दिनांक':new Date(v.entryTime).toLocaleDateString('mr-IN')
+  }));
+  const ws=XLSX.utils.json_to_sheet(data);
+  ws['!cols']=[{wch:14},{wch:20},{wch:14},{wch:30},{wch:16},{wch:20},{wch:24},{wch:20},{wch:20},{wch:20},{wch:14}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Visitors');
+  XLSX.writeFile(wb,`visitor_log_${new Date().toISOString().split('T')[0]}.xlsx`);
+}
+
+function loadDemo() {
+  const reasons=['तक्रार नोंदवणे','FIR स्थिती','चारित्र्य प्रमाणपत्र','NOC / परवाना','माहिती घेणे'];
+  const officers=['PI / सीनियर PI','API (Cyber Cell)','PSI (ड्युटी अधिकारी)'];
+  const names=['राजेश शिंदे','प्रिया पाटील','अजय कदम','सुनीता मोरे','विकास जाधव'];
+  const arr = getVisitors();
+  const seq = arr.length;
+  const now = new Date();
+  for(let i=0;i<5;i++){
+    const d=new Date(now.getTime()-i*18*60000);
+    const dm=String(d.getDate()).padStart(2,'0'),mm=String(d.getMonth()+1).padStart(2,'0');
+    arr.push({
+      token:`WTT${dm}${mm}${String(seq+i+1).padStart(3,'0')}`,
+      name:names[i],mobile:`98${Math.floor(10000000+Math.random()*89999999)}`,
+      address:`${Math.floor(100+Math.random()*900)}, दादर, मुंबई`,
+      idType:'आधार कार्ड',idNumber:`XXXX XXXX ${Math.floor(1000+Math.random()*9000)}`,
+      reason:reasons[i%reasons.length],officer:officers[i%officers.length],photo:'',
+      entryTime:d.toISOString(),
+      exitTime:i>2?new Date(d.getTime()+30*60000).toISOString():null
+    });
+  }
+  saveVisitors(arr); updateStats(); renderTable();
+}
+</script>
+</body>
+</html>
